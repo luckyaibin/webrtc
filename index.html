@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.47.0/mapbox-gl.js'></script>
+    <!-- <script src='https://webrtc.github.io/adapter/adapter-latest.js'></script> -->
+    <script src='adapter-latest.js'></script
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.47.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='site.css' rel='stylesheet' />
+    
+</head>
+
+<body>
+    <!--div id='map'></div-->
+    <div id='chat'>
+        <ol class="recentchatlist" id="recentchatlist">
+            <label style="color: rgb(215, 233, 250);">UserName(distance)</label> 
+            <button id="prepareButton" name="prepareButton" class="buttonleft">
+                Prepare
+            </button>
+
+            <input type="text" name="message" id="connectTo" placeholder="connect to ?"
+                    inputmode="latin" size=20 maxlength=120 enabled>
+            </label>
+
+            <button id="chatButton" name="chatButton" class="buttonleft">
+            Chat
+            </button>
+            <button id="connectButton" name="connectButton" class="buttonleft">
+            Connect
+            </button>
+            <button id="disconnectButton" name="disconnectButton" class="buttonright" disabled>
+                Disconnect
+            </button>
+        </ol>
+
+        
+        <div class="messagebox">
+            <label for="message">Enter a message:
+              <input type="text" name="message" id="message" placeholder="Message text"
+                      inputmode="latin" size=60 maxlength=120 disabled>
+            </label>
+            <button id="sendButton" name="sendButton" class="buttonright" disabled>
+              Send
+            </button>
+        </div>
+        <div class="messagebox" id="receivebox">
+            <p>Messages received:</p>
+        </div>
+
+        <input type='text' id='chat-input' placeholder="    ">
+        <div id='chat-area'></div>
+    </div>
+
+
+
+    <button id="track-button">GPS IS OFF</button>
+    <button id="p2p-button">P2P==</button>
+
+    
+    <script src='site.js'></script>
+    <script src='main.js'></script>
+
+</body>
+
+</html>

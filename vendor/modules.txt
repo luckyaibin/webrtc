@@ -1,0 +1,27 @@
+# github.com/gomodule/redigo v1.8.8
+## explicit
+github.com/gomodule/redigo/redis
+# github.com/gorilla/websocket v1.4.2
+## explicit
+github.com/gorilla/websocket
+# github.com/tidwall/gjson v1.14.0
+## explicit
+github.com/tidwall/gjson
+# github.com/tidwall/match v1.1.1
+github.com/tidwall/match
+# github.com/tidwall/modern-server v0.0.0-20200405171331-3cc8a38bf6a5
+## explicit
+github.com/tidwall/modern-server
+# github.com/tidwall/pretty v1.2.0
+github.com/tidwall/pretty
+# golang.org/x/crypto v0.0.0-20220209195652-db638375bc3a
+## explicit
+golang.org/x/crypto/acme
+golang.org/x/crypto/acme/autocert
+# golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
+golang.org/x/net/idna
+# golang.org/x/text v0.3.6
+golang.org/x/text/secure/bidirule
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
