@@ -1,7 +1,7 @@
 .messagebox {
-    border: 1px solid black;
+    border: 3px solid black;
     padding: 5px;
-    width: 450px;
+    width: 200px;
   }
   
   .buttonright {
@@ -12,8 +12,4 @@
     float: left;
   }
   
-  .controlbox {
-    padding: 5px;
-    width: 450px;
-    height: 28px;
-  }
+ 

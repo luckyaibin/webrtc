@@ -1,9 +1,10 @@
 const express = require("express");
 const WebSocket = require("ws");
 const http = require("http");
-const uuidv4 = require("uuid/v4");
+const uuidv4 = require("uuid").v4;
 //const { uuidv4:uuidv4} = require("uuid");
 
+console.log(uuidv4)
 
 const app = express();
 

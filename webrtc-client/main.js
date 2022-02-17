@@ -9,7 +9,7 @@ const sendJSON = (connection, message) => {
   connection.send(JSON.stringify(message));
 };
 
-var signalingAddr = "ws://192.168.1.42:9000"
+var signalingAddr = "ws://192.168.1.145:9000"
 
 ws = new WebSocket(signalingAddr)
 ws.sendJSON = (json)=>{
@@ -108,53 +108,204 @@ function startup() {
     prepareButton = document.getElementById('prepareButton');//准备按钮，点击后连接signaling
     connectButton = document.getElementById('connectButton');
     disconnectButton = document.getElementById('disconnectButton');
-    sendButton = document.getElementById('sendButton');
-    messageInputBox = document.getElementById('message');
+
     receiveBox = document.getElementById('receivebox');
-  
+    messageInputBox = document.getElementById('message');
+    sendButton = document.getElementById('sendButton');    
+
     // Set event listeners for user interface widgets
   
-    prepareButton.addEventListener('click', prepare, false);
-    connectButton.addEventListener('click', connectPeers, false);
-    disconnectButton.addEventListener('click', disconnectPeers, false);
-    sendButton.addEventListener('click', sendMessage, false);
+    //prepareButton.addEventListener('click', prepare, false);
+    //connectButton.addEventListener('click', connectPeers, false);
+    //disconnectButton.addEventListener('click', disconnectPeers, false);
+    //sendButton.addEventListener('click', sendMessage, false);
 
     //UISetRecentChatList([{"account":"wangaibin"}])
+
+    UISetNearbyList(dataNearbyUsers)
+
+    UISetRecentChatList(dataRecentChatUsers)
   }
+
+  
+
+  //最近联系人
+  var dataRecentChatUsers = {
+    "wangaibin":{
+      "account":"wangaibin",
+      "name":"Alone",
+      "messages":[
+          {
+            "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:00:00","content":"你好"
+          },
+          {
+            "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:01:00","content":"在吗?🙂"
+          },
+          {
+            "account":"wangaibin","name":"Alone","time":"2022-02-17 18:01:00","content":"是的,我在"
+          }
+        ]//最近100条信息
+    },
+    "wangjunhao":{
+      "account":"wangjunhao",
+      "name":"Awake",
+      "messages":{}
+    }
+  }
+
+  //数据
+  var dataNearbyUsers = {
+    "wangaibin":{
+      "account":"wangaibin",
+      "name":"Alone",
+      "distance":560,
+      "longititude":32.01,
+      "latitude":152.1,
+      "signal":"signal data from 1???"
+    },
+    "wangjunhao":{
+      "account":"wangjunhao",
+      "name":"Awake",
+      "distance":340,
+      "longititude":32.02,
+      "latitude":152.3,
+      "signal":"signal data from 2???"
+    }
+  }
+
+  function FillReceiveBox(messages,selfAccount){
+    //先清空
+    receiveBox.innerHTML = '';
+    messages.forEach((message)=>{
+    //创建元素(标签)，并放入相应父元素中  
+      var op1 = document.createElement("p");
+      var odiv = document.createElement("div");
+      odiv.appendChild(op1);
+      receiveBox.appendChild(odiv);
+
+      op1.style.border = "1px solid #ccc";
+      op1.style.borderRadius = "10px";//-去掉，小驼峰命名
+      op1.style.maxWidth = "100px";//最大宽度(也是小驼峰)
+      op1.style.margin="10px"
+      op1.style.padding="5px"
+      op1.innerHTML = message.content;
+      odiv.style.overflow="hidden";
+      //解决子元素float带来的高度塌陷(会同一行显示)
+      messageInputBox.value="";//清空文本域的内容
+
+      if(selfAccount != message.account){
+        op1.style.background = "pink";
+        op1.style.float="left";
+      }else{
+        op1.style.background = "greenyellow";
+        op1.style.float="right"; 
+        console.log("float to where???")
+      }
+    })
+  }
+  function UISetNearbyList(nearbyusers){
+    nearbylist = document.getElementById('nearbylist')
+    if(nearbylist){
+      console.log("附近列表",nearbyusers)
+      Object.keys(nearbyusers).forEach(key => {
+        var user = nearbyusers[key]
+
+        var name = document.createElement("label")
+        name.setAttribute("style","color: rgb(215, 233, 250);")
+         
+       
+        name.innerHTML= user.name + "("+ user.distance + "m)"
+        //列表元素
+        var li = document.createElement('li')
+        //li.setAttribute("class","messagebox")
+  
+        var btnChat = document.createElement('button')
+        btnChat.setAttribute("class","buttonleft")
+        btnChat.data = "hi"
+        if (user.signal!="" && user.signal!=null ){ 
+          btnChat.innerHTML = 'chat with';
+          btnChat.disabled = false
+        }else{
+          btnChat.innerHTML = 'no disturb';
+          btnChat.disabled = true
+        }
+
+        btnChat.onclick = function(handler,ev){
+          alert("hello from " + btnChat.data)
+          connectPeers()
+        }
+  
+        // var btnConnect = document.createElement('button')
+        // btnChat.setAttribute("class","buttonleft")
+  
+        // btnConnect.data = 'I am btnConnect'
+        // btnConnect.innerHTML = 'connect'
+        // btnConnect.onclick = function(handler,ev){
+        //   alert("hello from " + btnConnect.data)
+        // }
+  
+        // var btnDisconnect = document.createElement('button')
+        // btnChat.setAttribute("class","buttonright")
+  
+        // btnDisconnect.data = 'I am btnDisconnect'
+        // btnDisconnect.innerHTML = 'disconnect'
+        // btnDisconnect.onclick = function(handler,ev){
+        //   alert("hello from " + btnDisconnect.data)
+        // }
+  
+   
+        li.appendChild(name)
+        li.appendChild(btnChat)
+        //li.appendChild(btnConnect)
+        //li.appendChild(btnDisconnect)
+      
+        nearbylist.appendChild(li)
+      });     
+    }
+  }
+
 
   function UISetRecentChatList(users){
     //最近列表
     recentchatlist = document.getElementById('recentchatlist')
     if(recentchatlist){
       console.log("最近列表",recentchatlist)
-      users.forEach(user => {
-        var name = document.createElement("label")
-        name.setAttribute("style","color: rgb(215, 233, 250);")
-        name.innerHTML= user.account
+      Object.keys(users).forEach(account => {
         //列表元素
         var li = document.createElement('li')
-        li.setAttribute("class","messagebox")
+        //li.setAttribute("class","messagebox")
+
+        var user = users[account]
+        var name = document.createElement("label")
+        name.setAttribute("style","color: rgb(215, 233, 250);")
+        name.innerHTML= user.name
+        
   
         var btnChat = document.createElement('button')
         btnChat.setAttribute("class","buttonleft")
         btnChat.data = "hi"
         btnChat.innerHTML = 'chat';
-        btnChat.onclick = function(handler,ev){
-          alert("hello from " + btnChat.data)
+        btnChat.onclick = function(handler,ev){ //打开记录
+          alert("hello from " + btnChat.data + JSON.stringify(handler)+ev)
+
+          FillReceiveBox(user.messages,"wangaibin")
+
         }
+        //btnChat.addEventListener('click', sendMessage, false);
+
+        
   
-        var btnConnect = document.createElement('button')
-        btnChat.setAttribute("class","buttonleft")
+        // var btnConnect = document.createElement('button')
+        // btnChat.setAttribute("class","buttonleft")
   
-        btnConnect.data = 'I am btnConnect'
-        btnConnect.innerHTML = 'connect'
-        btnConnect.onclick = function(handler,ev){
-          alert("hello from " + btnConnect.data)
-        }
+        // btnConnect.data = 'I am btnConnect'
+        // btnConnect.innerHTML = 'connect'
+        // btnConnect.onclick = function(handler,ev){
+        //   alert("hello from " + btnConnect.data)
+        // }
   
         var btnDisconnect = document.createElement('button')
         btnChat.setAttribute("class","buttonright")
-  
         btnDisconnect.data = 'I am btnDisconnect'
         btnDisconnect.innerHTML = 'disconnect'
         btnDisconnect.onclick = function(handler,ev){
@@ -164,7 +315,7 @@ function startup() {
    
         li.appendChild(name)
         li.appendChild(btnChat)
-        li.appendChild(btnConnect)
+        //li.appendChild(btnConnect)
         li.appendChild(btnDisconnect)
       
         recentchatlist.appendChild(li)
@@ -247,7 +398,7 @@ function startup() {
        
 
       localConnection = new RTCPeerConnection()
-
+      localConnection.ondatachannel = (c)=>{console.log("本地datachannel建立完成!!!!",c)};
       sendChannel = localConnection.createDataChannel("sendChannel");
       sendChannel.onopen = handleSendChannelStatusChange;
       sendChannel.onclose = handleSendChannelStatusChange;

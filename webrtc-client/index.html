@@ -13,8 +13,13 @@
 <body>
     <!--div id='map'></div-->
     <div id='chat'>
+        
+        <!-- 附近的列表 -->
+        <ol class="nearbylist" id="nearbylist">
+        </ol>
+
         <ol class="recentchatlist" id="recentchatlist">
-            <label style="color: rgb(215, 233, 250);">UserName(distance)</label> 
+            <!-- <label style="color: rgb(215, 233, 250);">UserName(distance)</label> 
             <button id="prepareButton" name="prepareButton" class="buttonleft">
                 Prepare
             </button>
@@ -31,10 +36,12 @@
             </button>
             <button id="disconnectButton" name="disconnectButton" class="buttonright" disabled>
                 Disconnect
-            </button>
+            </button> -->
         </ol>
 
-        
+        <div class="messagebox" id="receivebox">
+            <p>Messages received:</p>
+        </div>
         <div class="messagebox">
             <label for="message">Enter a message:
               <input type="text" name="message" id="message" placeholder="Message text"
@@ -44,9 +51,7 @@
               Send
             </button>
         </div>
-        <div class="messagebox" id="receivebox">
-            <p>Messages received:</p>
-        </div>
+        
 
         <input type='text' id='chat-input' placeholder="    ">
         <div id='chat-area'></div>
