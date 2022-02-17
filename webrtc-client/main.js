@@ -10,6 +10,7 @@ const sendJSON = (connection, message) => {
 };
 
 var signalingAddr = "ws://192.168.1.42:9000"
+
 ws = new WebSocket(signalingAddr)
 ws.sendJSON = (json)=>{
   var data = JSON.stringify(json)
