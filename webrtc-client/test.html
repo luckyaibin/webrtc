@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>对话框</title>
+    <style type="text/css">
+        .talk_show {
+            width: 400px;
+            height: 100px;
+            border: 1px solid #666;
+            overflow: auto;
+        }
+    </style>
+    <!-- -------------实现代码的开始------------- -->
+    <script type="text/javascript"> 
+    function fun() {
+        var now = new Date();
+        var oTalk_sub = document.getElementById('talksub');  
+        var receiveBox = document.getElementById('words');
+    
+        //创建元素(标签)，并放入相应父元素中  
+      var op1 = document.createElement("p");
+      var odiv = document.createElement("div");  
+      //odiv.style.overflow="hidden";
+      odiv.style.overflowY = "auto";
+
+     
+
+      op1.style.border = "1px solid #ccc";
+      op1.style.borderRadius = "10px";//-去掉，小驼峰命名
+      op1.style.maxWidth = "100px";//最大宽度(也是小驼峰)
+      op1.style.margin="10px"
+      op1.style.padding="5px"
+      var now = new Date();
+      op1.innerHTML = "hello"+now.getTime();
+     
+      //解决子元素float带来的高度塌陷(会同一行显示)
+      //messageInputBox.value="";//清空文本域的内容
+      selfAccount = 1
+      message = {
+          "account":null,
+      }
+      if(selfAccount != message.account){
+        op1.style.background = "pink";
+        op1.style.float="left";
+      }else{
+        op1.style.background = "greenyellow";
+        op1.style.float="right"; 
+        console.log("float to where???")
+      }
+
+      receiveBox.appendChild(odiv);
+      odiv.appendChild(op1);
+
+      receiveBox.scrollTop = receiveBox.scrollHeight;
+    }
+ 
+    </script>
+</head>
+<body>
+        <h3>----将滚动条保持到最底端---</h3>
+        <div class="talk_show" id="words"></div>
+        <div>
+        <input type="button" value="发 送" onclick="fun()" id="talksub" style="margin-top:20px ">
+        </div>
+         <!-- -------------实现代码的结束------------ -->
+</body>
+ 
+</html>

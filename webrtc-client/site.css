@@ -1,4 +1,4 @@
-* {
+/* * {
     box-sizing: border-box;
 }
 body, html {
@@ -57,37 +57,10 @@ body, html {
 }
 
 #chat {
-    margin-left: 70%;    
+    margin-right: 0rem;    
     width:  50%;
     height: 50%;
     background: #eee;
-}
-
-#chat-area{
-    padding: 0 11px;
-    overflow-y: scroll;
-}
-
-#chat-template{
-    background:yellow;
-}
-
-#messages{
-    background:blue;
-    width: 100%;
-    height: 100%;
-    padding-bottom: 50px;
-}
-
-* {
-    outline-width: 0;
-}
-
-#chat-input{
-    width: 100%;
-    font-size: 20px;
-    border: 0;
-    padding: 10px;
 }
 
 .marker {
@@ -137,4 +110,4 @@ body, html {
     left: -90px;
     top: -23px;    
 }
-
+ */

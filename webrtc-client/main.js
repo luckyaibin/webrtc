@@ -109,7 +109,6 @@ function startup() {
     connectButton = document.getElementById('connectButton');
     disconnectButton = document.getElementById('disconnectButton');
 
-    receiveBox = document.getElementById('receivebox');
     messageInputBox = document.getElementById('message');
     sendButton = document.getElementById('sendButton');    
 
@@ -139,7 +138,7 @@ function startup() {
             "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:00:00","content":"你好"
           },
           {
-            "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:01:00","content":"在吗?🙂"
+            "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:01:00","content":"1?"
           },
           {
             "account":"wangaibin","name":"Alone","time":"2022-02-17 18:01:00","content":"是的,我在"
@@ -173,36 +172,50 @@ function startup() {
     }
   }
 
-  function FillReceiveBox(messages,selfAccount){
-    //先清空
-    receiveBox.innerHTML = '';
+  
+
+
+
+  function UIFillReceiveBox(messages,selfAccount){
+    var receiveBox = document.getElementById('receivebox');
+    receiveBox.innerHTML = '';//先清空
     messages.forEach((message)=>{
-    //创建元素(标签)，并放入相应父元素中  
-      var op1 = document.createElement("p");
-      var odiv = document.createElement("div");
-      odiv.appendChild(op1);
-      receiveBox.appendChild(odiv);
-
-      op1.style.border = "1px solid #ccc";
-      op1.style.borderRadius = "10px";//-去掉，小驼峰命名
-      op1.style.maxWidth = "100px";//最大宽度(也是小驼峰)
-      op1.style.margin="10px"
-      op1.style.padding="5px"
-      op1.innerHTML = message.content;
-      odiv.style.overflow="hidden";
-      //解决子元素float带来的高度塌陷(会同一行显示)
-      messageInputBox.value="";//清空文本域的内容
-
-      if(selfAccount != message.account){
-        op1.style.background = "pink";
-        op1.style.float="left";
-      }else{
-        op1.style.background = "greenyellow";
-        op1.style.float="right"; 
-        console.log("float to where???")
-      }
+      UIAddOneMessage(message,selfAccount)
     })
   }
+  //在内容框内追加一条内容
+  function UIAddOneMessage(message,selfAccount){
+    var receiveBox = document.getElementById('receivebox');   
+    //创建元素(标签)，并放入相应父元素中  
+    var op1 = document.createElement("p");
+    var odiv = document.createElement("div");
+
+    odiv.style.overflow="hidden";
+    odiv.style.overflowY = "auto";
+
+    op1.style.border = "1px solid #ccc";
+    op1.style.borderRadius = "10px";//-去掉，小驼峰命名
+    //op1.style.maxWidth = "100px";//最大宽度(也是小驼峰)
+    op1.style.margin="10px"
+    op1.style.padding="5px"
+    var now = new Date();
+    op1.innerHTML = message.content ;
+
+    //解决子元素float带来的高度塌陷(会同一行显示)
+    //messageInputBox.value="";//清空文本域的内容
+    if(selfAccount != message.account){
+      op1.style.background = "gray";
+      op1.style.float="left";
+    }else{
+      op1.style.background = "gray";
+      op1.style.float="right"; 
+      console.log("float to where???")
+    }
+    receiveBox.appendChild(odiv);
+    odiv.appendChild(op1);
+    receiveBox.scrollTop = receiveBox.scrollHeight;
+  }
+
   function UISetNearbyList(nearbyusers){
     nearbylist = document.getElementById('nearbylist')
     if(nearbylist){
@@ -212,8 +225,6 @@ function startup() {
 
         var name = document.createElement("label")
         name.setAttribute("style","color: rgb(215, 233, 250);")
-         
-       
         name.innerHTML= user.name + "("+ user.distance + "m)"
         //列表元素
         var li = document.createElement('li')
@@ -231,8 +242,10 @@ function startup() {
         }
 
         btnChat.onclick = function(handler,ev){
-          alert("hello from " + btnChat.data)
-          connectPeers()
+          //alert("hello from " + btnChat.data)
+          //connectPeers()
+          console.log("想要和"+user.account+"建立连接")
+          connectTo(user.account)
         }
   
         // var btnConnect = document.createElement('button')
@@ -279,17 +292,14 @@ function startup() {
         var name = document.createElement("label")
         name.setAttribute("style","color: rgb(215, 233, 250);")
         name.innerHTML= user.name
-        
-  
+    
         var btnChat = document.createElement('button')
         btnChat.setAttribute("class","buttonleft")
         btnChat.data = "hi"
         btnChat.innerHTML = 'chat';
         btnChat.onclick = function(handler,ev){ //打开记录
-          alert("hello from " + btnChat.data + JSON.stringify(handler)+ev)
-
-          FillReceiveBox(user.messages,"wangaibin")
-
+          //alert("hello from " + btnChat.data + JSON.stringify(handler)+ev)
+          UIFillReceiveBox(user.messages,"wangaibin")
         }
         //btnChat.addEventListener('click', sendMessage, false);
 
@@ -386,6 +396,102 @@ function startup() {
         type:"login",
         name:currentAcc,
       })
+  }
+
+var currentConnections = {
+  /*和其他用户建立的所有的本地连接
+    "wangjunhao":{ "ok"=true,"initiator":true,"peer":SimplePeer,"funcs":{} }
+  */
+}
+
+//主动发起连接
+  function connectTo(connectToAcc){
+    if (currentConnections[connectToAcc]){
+      return
+    }
+    const p = new SimplePeer({
+      initiator: true,
+      trickle: false
+    })
+    var connConf = {
+      "initiator":true,
+      "peer":p,
+      "funcs":{},
+    }
+    currentConnections[connectToAcc] = connConf
+
+    p.on('error', err => {
+      //出错了就删除
+      console.log('error', err)
+      delete currentConnections[connectToAcc]
+    })
+    p.on('signal', data => {
+      console.log('SIGNAL', JSON.stringify(data))
+      document.querySelector('#outgoing').textContent = JSON.stringify(data)
+      console.log("发送offer给",connectToAcc)
+       ws.sendJSON({
+        "type":"offer",
+        "offer":data,
+        "name":connectToAcc,
+       })
+    })
+    document.querySelector('form').addEventListener('submit', ev => {
+      ev.preventDefault()
+      p.signal(JSON.parse(document.querySelector('#incoming').value))
+    })
+
+    p.on('connect', () => {
+      console.log('CONNECT')
+      p.send('whatever' + Math.random())
+    })
+    p.on('data', data => {
+      console.log('data: ' + data)
+    })
+  }
+  //可以主动响应别人发起的连接
+  function accept(connectFromAcc,signalData){
+    const p = new SimplePeer({
+      initiator: false,
+      trickle: false
+    })
+
+    currentConnections[connectFromAcc] = {
+      "initiator":false,
+      "peer":p,
+      "funcs":{},
+    }
+
+    p.on('error', err => {
+      //出错了就删除
+      console.log('error', err)
+      delete currentConnections[connectFromAcc]
+    })
+    // p.on('signal', data => {
+    //   console.log('SIGNAL', JSON.stringify(data))
+    //   document.querySelector('#outgoing').textContent = JSON.stringify(data)
+    //   console.log("发送answer给",connectToAcc)
+    //    ws.sendJSON({
+    //     "type":"answer",
+    //     "answer":data,
+    //     "name":connectToAcc,
+    //    })
+    // })
+    
+
+    document.querySelector('form').addEventListener('submit', ev => {
+      ev.preventDefault()
+      p.signal(JSON.parse(document.querySelector('#incoming').value))
+    })
+
+    p.on('connect', () => {
+      console.log('CONNECT')
+      p.send('whatever' + Math.random())
+    })
+    p.on('data', data => {
+      console.log('data: ' + data)
+    })
+
+    p.signal(signalData)
   }
 
   function connectPeers(btnEvt){
