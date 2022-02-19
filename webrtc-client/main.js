@@ -40,40 +40,51 @@ ws.onmessage = function(evt) {
     }
     console.log("收到消息",data)
     var type = data.type;
-    var name = data.name;
+    
     switch (type) {
-      case "offer": //收到远端的邀请，自己相当于是服务器
-        var offer = data.offer 
-        var open_YN = confirm("是否打开新窗口");
-        if(open_YN){
-          console.log("Yes")
+      case "signal":
+        var fromAccount = data.from;
+        var signalData = data.signalData
+        var conn= getConnection(fromAccount)
+        if (!conn){
+          acceptConnection(fromAccount,signalData)
+        }else{
+          conn.peer.signal(signalData)
         }
-        if (getConnection(name)){
-          console.error("已经存在和"+name+"的连接")
-          return
-        }
-        acceptConnection(name,offer)
-        break;
-      case "answer"://自己发出邀请后收到对方响应，自己是客户端，相当于连接上了服务器
-          var conn= getConnection(name)
-          if (!conn){
-            console.error("没有针对"+name+"发出过邀请，错误")
-            return
-          }
-          var answer=data.answer
-          console.log("自己发出邀请后收到了响应:",answer)
-          conn.peer.signal(answer)
-          // var desc = new RTCSessionDescription(answer)
-          // localConnection.setRemoteDescription(desc)
-          break;
-      case "candidate"://客户端或服务器收到对方的candidate消息
-          console.log("客户端或服务器收到对方的candidate消息",isServer)
-          var candidate = data.candidate
-          if (isServer) {
-            remoteConnection.addIceCandidate(new RTCIceCandidate(candidate))
-          }else{
-            localConnection.addIceCandidate(new RTCIceCandidate(candidate))
-          }
+      // case "offer": //收到远端的邀请，自己相当于是服务器
+      // var fromAccount = data.from;
+      //   var offer = data.offer 
+      //   var open_YN = confirm("是否打开新窗口");
+      //   if(open_YN){
+      //     console.log("Yes")
+      //   }
+      //   if (getConnection(fromAccount)){
+      //     console.error("已经存在和"+fromAccount+"的连接")
+      //     return
+      //   }
+      //   acceptConnection(fromAccount,offer)
+      //   break;
+      // case "answer"://自己发出邀请后收到对方响应，自己是客户端，相当于连接上了服务器
+      //     var fromAccount = data.from;
+      //     var conn= getConnection(fromAccount)
+      //     if (!conn){
+      //       console.error("没有针对"+fromAccount+"发出过邀请，错误")
+      //       return
+      //     }
+      //     var answer=data.answer
+      //     console.log("自己发出邀请后收到了响应:",answer)
+      //     conn.peer.signal(answer)
+      //     // var desc = new RTCSessionDescription(answer)
+      //     // localConnection.setRemoteDescription(desc)
+      //     break;
+      // case "candidate"://客户端或服务器收到对方的candidate消息
+      //     console.log("客户端或服务器收到对方的candidate消息",isServer)
+      //     var candidate = data.candidate
+      //     if (isServer) {
+      //       remoteConnection.addIceCandidate(new RTCIceCandidate(candidate))
+      //     }else{
+      //       localConnection.addIceCandidate(new RTCIceCandidate(candidate))
+      //     }
     }
 };
 
@@ -102,8 +113,9 @@ function startup() {
       console.log("login pressed")
       //var currentAcc = window.location.hash  
       var acc = document.querySelector('#loginAccount').value
-      console.log(acc)
-      prepareOK(acc)
+      var name = document.querySelector('#loginName').value
+      console.log(acc,name,"登录")
+      prepareOK(acc,name)
     })
 
     UISetNearbyList(dataNearbyUsers)
@@ -373,12 +385,13 @@ function startup() {
   var connectToAcc
   var isServer
   //主动告诉其他人:我是可以接收你们webrtc连接的
-  function prepareOK(currentAcc){
+  function prepareOK(currentAcc,name){
     //等待其他人来连接的webrtc
     //建立远程节点
     ws.sendJSON({
         type:"login",
-        name:currentAcc,
+        account:currentAcc,
+        name:name
       })
   }
 
@@ -419,9 +432,9 @@ function createConnection(connectToAcc){
       document.querySelector('#outgoing').textContent = JSON.stringify(data)
       console.log("发送offer给",connectToAcc)
        ws.sendJSON({
-        "type":"offer",
-        "offer":data,
-        "name":connectToAcc,
+        "type":"signal",
+        "signalData":data,
+        "to":connectToAcc,
        })
     })
     //把远端的signal设置给本地
@@ -431,7 +444,7 @@ function createConnection(connectToAcc){
     })
 
     p.on('connect', () => {
-      console.log('CONNECT'+" to:"+connectFromAcc+'主动连接建立成功')
+      console.log('CONNECT'+" to:"+connectToAcc+'主动连接建立成功')
       p.send('whatever' + Math.random())
     })
     p.on('data', data => {
@@ -440,6 +453,7 @@ function createConnection(connectToAcc){
   }
   //可以主动响应别人发起的连接
 function acceptConnection(connectFromAcc,signalData){
+    console.log("接收新连接:"+connectFromAcc,signalData)
     const p = new SimplePeer({
       initiator: false,
       trickle: false
@@ -457,10 +471,16 @@ function acceptConnection(connectFromAcc,signalData){
       delete currentConnections[connectFromAcc]
     })
     
-    p.signal(JSON.parse(signalData))
+    p.signal(signalData)
     //测试看被动连接是否收到signal通知
     p.on('signal', data => {
       console.log('SIGNAL 被动连接收到signal通知?????', JSON.stringify(data))
+
+      ws.sendJSON({
+        "type":"signal",
+        "signalData":data,
+        "to":connectFromAcc,
+      })
     })
     // document.querySelector('form').addEventListener('submit', ev => {
     //   ev.preventDefault()

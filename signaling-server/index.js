@@ -22,13 +22,13 @@ const sendTo = (connection, message) => {
   connection.send(JSON.stringify(message));
 };
 
-const sendToAll = (clients, type, { id, name: userName }) => {
+const sendToAll = (clients, type, { name, account: account }) => {
   Object.values(clients).forEach(client => {
-    if (client.name !== userName) {
+    if (client.account !== account) {
       client.send(
         JSON.stringify({
           type,
-          user: { id, userName }
+          user: { name, account }
         })
       );
     }
@@ -47,8 +47,9 @@ wss.on("connection", ws => {
       data = {};
     }
     console.log("收到消息:",data,ws._socket.remoteAddress,ws._socket.remotePort)
-    const { type, name, offer, answer, candidate } = data;
-
+    const { offer, answer, candidate } = data;
+    const type = data.type
+    
     //保证要先登录
     // if (users[name]==null && type!="login"){
     //   ws.send(JSON.stringify({"error":"请先登录"}))
@@ -60,69 +61,97 @@ wss.on("connection", ws => {
 
       //when a user tries to login
       case "login":
+        var name = data.name
+        var account = data.account
         //Check if username is available
-        if (users[name]) {
+        if (users[account]) {
           sendTo(ws, {
             type: "login",
             success: false,
-            message: "Username is unavailable"
+            message: "account is already online"
           });
         } else {
-          const id = uuidv4();
+          const account = data.account || uuidv4();
           const loggedIn = Object.values(
             users
-          ).map(({ id, name: userName }) => ({ id, userName }));
-          users[name] = ws;
+          ).map(({ account, name }) => ({ account, name }));
+
+          //保存连接
+          users[account] = ws;
+          ws.account = account;
           ws.name = name;
-          ws.id = id;
+          //回复登录成功
           sendTo(ws, {
             type: "login",
             success: true,
             users: loggedIn
           });
+          //把当前登录用户给所有人返回一遍
           sendToAll(users, "updateUsers", ws);
         }
         break;
-      case "offer":
-        //Check if user to send offer to exists
-        const offerRecipient = users[name];
-        if (!!offerRecipient) {
-          sendTo(offerRecipient, {
-            type: "offer",
-            offer,
-            name: ws.name
+      case "signal":
+        const toAccount = data.to
+        const signalData = data.signalData
+        //转发给对应的人
+        const signalRecipient = users[toAccount];
+        if (!!signalRecipient) {
+          sendTo(signalRecipient, {
+            type: "signal",
+            signalData,
+            from: ws.account
           });
         } else {
           sendTo(ws, {
             type: "error",
-            message: `User ${name} does not exist!`
+            message: `User ${toAccount} does not exist!`
           });
         }
         break;
-      case "answer"://转发应答
-        //Check if user to send answer to exists
-        const answerRecipient = users[name];
-        if (!!answerRecipient) {
-          sendTo(answerRecipient, {
-            type: "answer",
-            answer,
-          });
-        } else {
-          sendTo(ws, {
-            type: "error",
-            message: `User ${name} does not exist!`
-          });
-        }
-        break;
-      case "candidate":
-        const candidateRecipient = users[name];
-        if (!!candidateRecipient) {
-          sendTo(candidateRecipient, {
-            type: "candidate",
-            candidate
-          });
-        }
-        break;
+      // case "offer":
+      //   //Check if user to send offer to exists
+      //   const toAccount = data.to
+      //   //转发给对应的人
+      //   const offerRecipient = users[toAccount];
+      //   if (!!offerRecipient) {
+      //     sendTo(offerRecipient, {
+      //       type: "offer",
+      //       offer,
+      //       from: ws.account
+      //     });
+      //   } else {
+      //     sendTo(ws, {
+      //       type: "error",
+      //       message: `User ${toAccount} does not exist!`
+      //     });
+      //   }
+      //   break;
+      // case "answer"://转发应答
+      //   //Check if user to send answer to exists
+      //   const toAccount = data.to
+      //   const answerRecipient = users[toAccount];
+      //   if (!!answerRecipient) {
+      //     sendTo(answerRecipient, {
+      //       type: "answer",
+      //       answer,
+      //       from:ws.account
+      //     });
+      //   } else {
+      //     sendTo(ws, {
+      //       type: "error",
+      //       message: `User ${toAccount} does not exist!`
+      //     });
+      //   }
+      //   break;
+      // case "candidate":
+      //   const candidateRecipient = users[name];
+      //   if (!!candidateRecipient) {
+      //     sendTo(candidateRecipient, {
+      //       type: "candidate",
+      //       candidate
+      //     });
+      //   }
+      //   break;
       case "leave":
         sendToAll(users, "leave", ws);
         break;
