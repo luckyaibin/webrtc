@@ -43,53 +43,28 @@ ws.onmessage = function(evt) {
     var name = data.name;
     switch (type) {
       case "offer": //收到远端的邀请，自己相当于是服务器
-        isServer = true
-
         var offer = data.offer 
         var open_YN = confirm("是否打开新窗口");
         if(open_YN){
           console.log("Yes")
         }
-        //创建新的
-        remoteConnection = new RTCPeerConnection()
-        //创建对 datachannel 的事件处理回调；数据通道打开时该逻辑将被执行， 该回调处理将接收到一个 RTCDataChannel 对象
-        remoteConnection.ondatachannel = receiveChannelCallback;
-        remoteConnection.onicecandidate = e=> 
-        {
-            if (e.candidate){
-                console.log("远端设置ICE候选人并设置本地的候选人")
-                //localConnection.addIceCandidate(e.candidate).catch(handleAddCandidateError)
-                ws.sendJSON({
-                  "type":"candidate",
-                  "candidate":e.candidate,
-                  "name":name,
-                })
-            }
+        if (getConnection(name)){
+          console.error("已经存在和"+name+"的连接")
+          return
         }
-        remoteConnection.setRemoteDescription(new RTCSessionDescription(offer))
-        remoteConnection.createAnswer() 
-        .then( (answer)=>{
-            console.log("offer is:", offer)
-            console.log("answer is:",answer)
-
-            remoteConnection.setLocalDescription(answer)
-            .then(()=>{
-              console.log("remoteConneciton的local,currentlocal description:",remoteConnection.localDescription,remoteConnection.currentLocalDescription)
-            //把answer返回给邀请的人
-              ws.sendJSON({
-                "type":"answer",
-                "name":name,
-                "answer":remoteConnection.currentLocalDescription,//不能直接使用createAnswer产生的answer
-              })
-            })
-        })
+        acceptConnection(name,offer)
         break;
       case "answer"://自己发出邀请后收到对方响应，自己是客户端，相当于连接上了服务器
-          isServer = false
+          var conn= getConnection(name)
+          if (!conn){
+            console.error("没有针对"+name+"发出过邀请，错误")
+            return
+          }
           var answer=data.answer
           console.log("自己发出邀请后收到了响应:",answer)
-          var desc = new RTCSessionDescription(answer)
-          localConnection.setRemoteDescription(desc)
+          conn.peer.signal(answer)
+          // var desc = new RTCSessionDescription(answer)
+          // localConnection.setRemoteDescription(desc)
           break;
       case "candidate"://客户端或服务器收到对方的candidate消息
           console.log("客户端或服务器收到对方的candidate消息",isServer)
@@ -120,6 +95,16 @@ function startup() {
     //sendButton.addEventListener('click', sendMessage, false);
 
     //UISetRecentChatList([{"account":"wangaibin"}])
+
+    document.querySelector('#loginBtn').addEventListener('click', ev => {
+      // ev.preventDefault()
+      // p.signal(JSON.parse(document.querySelector('#incoming').value))
+      console.log("login pressed")
+      //var currentAcc = window.location.hash  
+      var acc = document.querySelector('#loginAccount').value
+      console.log(acc)
+      prepareOK(acc)
+    })
 
     UISetNearbyList(dataNearbyUsers)
 
@@ -245,7 +230,7 @@ function startup() {
           //alert("hello from " + btnChat.data)
           //connectPeers()
           console.log("想要和"+user.account+"建立连接")
-          connectTo(user.account)
+          createConnection(user.account)
         }
   
         // var btnConnect = document.createElement('button')
@@ -388,10 +373,9 @@ function startup() {
   var connectToAcc
   var isServer
   //主动告诉其他人:我是可以接收你们webrtc连接的
-  function prepare(){
+  function prepareOK(currentAcc){
     //等待其他人来连接的webrtc
     //建立远程节点
-    currentAcc = window.location.hash  
     ws.sendJSON({
         type:"login",
         name:currentAcc,
@@ -404,11 +388,14 @@ var currentConnections = {
   */
 }
 
+//获取和某个用户的连接
+function getConnection(connectToAcc){
+  return currentConnections[connectToAcc]
+}
+
 //主动发起连接
-  function connectTo(connectToAcc){
-    if (currentConnections[connectToAcc]){
-      return
-    }
+function createConnection(connectToAcc){
+  console.log("开始建立主动连接:",connectToAcc)
     const p = new SimplePeer({
       initiator: true,
       trickle: false
@@ -425,6 +412,8 @@ var currentConnections = {
       console.log('error', err)
       delete currentConnections[connectToAcc]
     })
+
+    //本地signal通知回调，需要发送给远端
     p.on('signal', data => {
       console.log('SIGNAL', JSON.stringify(data))
       document.querySelector('#outgoing').textContent = JSON.stringify(data)
@@ -435,13 +424,14 @@ var currentConnections = {
         "name":connectToAcc,
        })
     })
+    //把远端的signal设置给本地
     document.querySelector('form').addEventListener('submit', ev => {
       ev.preventDefault()
       p.signal(JSON.parse(document.querySelector('#incoming').value))
     })
 
     p.on('connect', () => {
-      console.log('CONNECT')
+      console.log('CONNECT'+" to:"+connectFromAcc+'主动连接建立成功')
       p.send('whatever' + Math.random())
     })
     p.on('data', data => {
@@ -449,7 +439,7 @@ var currentConnections = {
     })
   }
   //可以主动响应别人发起的连接
-  function accept(connectFromAcc,signalData){
+function acceptConnection(connectFromAcc,signalData){
     const p = new SimplePeer({
       initiator: false,
       trickle: false
@@ -466,32 +456,24 @@ var currentConnections = {
       console.log('error', err)
       delete currentConnections[connectFromAcc]
     })
-    // p.on('signal', data => {
-    //   console.log('SIGNAL', JSON.stringify(data))
-    //   document.querySelector('#outgoing').textContent = JSON.stringify(data)
-    //   console.log("发送answer给",connectToAcc)
-    //    ws.sendJSON({
-    //     "type":"answer",
-    //     "answer":data,
-    //     "name":connectToAcc,
-    //    })
-    // })
     
-
-    document.querySelector('form').addEventListener('submit', ev => {
-      ev.preventDefault()
-      p.signal(JSON.parse(document.querySelector('#incoming').value))
+    p.signal(JSON.parse(signalData))
+    //测试看被动连接是否收到signal通知
+    p.on('signal', data => {
+      console.log('SIGNAL 被动连接收到signal通知?????', JSON.stringify(data))
     })
+    // document.querySelector('form').addEventListener('submit', ev => {
+    //   ev.preventDefault()
+    //   p.signal(JSON.parse(document.querySelector('#incoming').value))
+    // })
 
     p.on('connect', () => {
-      console.log('CONNECT')
+      console.log('CONNECT'+" from:"+connectFromAcc+'被动连接建立成功')
       p.send('whatever' + Math.random())
     })
     p.on('data', data => {
       console.log('data: ' + data)
     })
-
-    p.signal(signalData)
   }
 
   function connectPeers(btnEvt){
