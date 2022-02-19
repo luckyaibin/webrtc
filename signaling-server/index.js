@@ -22,13 +22,13 @@ const sendTo = (connection, message) => {
   connection.send(JSON.stringify(message));
 };
 
-const sendToAll = (clients, type, { name, account: account }) => {
+const sendToAll = (clients, type, { name, account,longititude,latitude }) => {
   Object.values(clients).forEach(client => {
     if (client.account !== account) {
       client.send(
         JSON.stringify({
           type,
-          user: { name, account }
+          user: { name, account ,longititude,latitude}
         })
       );
     }
@@ -80,6 +80,8 @@ wss.on("connection", ws => {
           users[account] = ws;
           ws.account = account;
           ws.name = name;
+          ws.longititude = (Math.random() - 0.5) * 180
+          ws.latitude = (Math.random() - 0.5) * 90
           //回复登录成功
           sendTo(ws, {
             type: "login",

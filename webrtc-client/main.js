@@ -31,7 +31,6 @@ ws.onerror = function(evt) {
 
 ws.onmessage = function(evt) { 
     let data;
-    //accept only JSON messages
     try {
       data = JSON.parse(evt.data);
     } catch (e) {
@@ -40,7 +39,6 @@ ws.onmessage = function(evt) {
     }
     console.log("收到消息",data)
     var type = data.type;
-    
     switch (type) {
       case "signal":
         var fromAccount = data.from;
@@ -51,44 +49,19 @@ ws.onmessage = function(evt) {
         }else{
           conn.peer.signal(signalData)
         }
-      // case "offer": //收到远端的邀请，自己相当于是服务器
-      // var fromAccount = data.from;
-      //   var offer = data.offer 
-      //   var open_YN = confirm("是否打开新窗口");
-      //   if(open_YN){
-      //     console.log("Yes")
-      //   }
-      //   if (getConnection(fromAccount)){
-      //     console.error("已经存在和"+fromAccount+"的连接")
-      //     return
-      //   }
-      //   acceptConnection(fromAccount,offer)
-      //   break;
-      // case "answer"://自己发出邀请后收到对方响应，自己是客户端，相当于连接上了服务器
-      //     var fromAccount = data.from;
-      //     var conn= getConnection(fromAccount)
-      //     if (!conn){
-      //       console.error("没有针对"+fromAccount+"发出过邀请，错误")
-      //       return
-      //     }
-      //     var answer=data.answer
-      //     console.log("自己发出邀请后收到了响应:",answer)
-      //     conn.peer.signal(answer)
-      //     // var desc = new RTCSessionDescription(answer)
-      //     // localConnection.setRemoteDescription(desc)
-      //     break;
-      // case "candidate"://客户端或服务器收到对方的candidate消息
-      //     console.log("客户端或服务器收到对方的candidate消息",isServer)
-      //     var candidate = data.candidate
-      //     if (isServer) {
-      //       remoteConnection.addIceCandidate(new RTCIceCandidate(candidate))
-      //     }else{
-      //       localConnection.addIceCandidate(new RTCIceCandidate(candidate))
-      //     }
+      break;
+      case "login":
+        console.log("")
+        dataNearbyUsers = data.users
+        UISetNearbyList(dataNearbyUsers)
+        break;
+      case "updateUsers"://有新的人出现
+        var user = data.user 
+        dataNearbyUsers[user.account] = user
+        UISetNearbyList(dataNearbyUsers)
+        break;
     }
 };
-
-
 
 function startup() {
     prepareButton = document.getElementById('prepareButton');//准备按钮，点击后连接signaling
@@ -98,15 +71,6 @@ function startup() {
     messageInputBox = document.getElementById('message');
     sendButton = document.getElementById('sendButton');    
 
-    // Set event listeners for user interface widgets
-  
-    //prepareButton.addEventListener('click', prepare, false);
-    //connectButton.addEventListener('click', connectPeers, false);
-    //disconnectButton.addEventListener('click', disconnectPeers, false);
-    //sendButton.addEventListener('click', sendMessage, false);
-
-    //UISetRecentChatList([{"account":"wangaibin"}])
-
     document.querySelector('#loginBtn').addEventListener('click', ev => {
       // ev.preventDefault()
       // p.signal(JSON.parse(document.querySelector('#incoming').value))
@@ -115,15 +79,12 @@ function startup() {
       var acc = document.querySelector('#loginAccount').value
       var name = document.querySelector('#loginName').value
       console.log(acc,name,"登录")
-      prepareOK(acc,name)
+      login(acc,name)
     })
 
     UISetNearbyList(dataNearbyUsers)
-
     UISetRecentChatList(dataRecentChatUsers)
   }
-
-  
 
   //最近联系人
   var dataRecentChatUsers = {
@@ -157,7 +118,6 @@ function startup() {
       "distance":560,
       "longititude":32.01,
       "latitude":152.1,
-      "signal":"signal data from 1???"
     },
     "wangjunhao":{
       "account":"wangjunhao",
@@ -165,13 +125,8 @@ function startup() {
       "distance":340,
       "longititude":32.02,
       "latitude":152.3,
-      "signal":"signal data from 2???"
     }
   }
-
-  
-
-
 
   function UIFillReceiveBox(messages,selfAccount){
     var receiveBox = document.getElementById('receivebox');
@@ -237,33 +192,10 @@ function startup() {
           btnChat.innerHTML = 'no disturb';
           btnChat.disabled = true
         }
-
         btnChat.onclick = function(handler,ev){
-          //alert("hello from " + btnChat.data)
-          //connectPeers()
           console.log("想要和"+user.account+"建立连接")
           createConnection(user.account)
         }
-  
-        // var btnConnect = document.createElement('button')
-        // btnChat.setAttribute("class","buttonleft")
-  
-        // btnConnect.data = 'I am btnConnect'
-        // btnConnect.innerHTML = 'connect'
-        // btnConnect.onclick = function(handler,ev){
-        //   alert("hello from " + btnConnect.data)
-        // }
-  
-        // var btnDisconnect = document.createElement('button')
-        // btnChat.setAttribute("class","buttonright")
-  
-        // btnDisconnect.data = 'I am btnDisconnect'
-        // btnDisconnect.innerHTML = 'disconnect'
-        // btnDisconnect.onclick = function(handler,ev){
-        //   alert("hello from " + btnDisconnect.data)
-        // }
-  
-   
         li.appendChild(name)
         li.appendChild(btnChat)
         //li.appendChild(btnConnect)
@@ -329,40 +261,7 @@ function startup() {
       });     
     }
   }
-
-  function handleLocalAddCandidateSuccess(){
-    connectButton.disabled = true;
-  }
-
-  function handleRemoteAddCandidateSuccess(){
-    disconnectButton.disabled = false;
-  }
-
-  function handleCreateDiscriptionError(err){
-    console.error("启动连接尝试出错：",err)
-  }
-
-  //RTCPeerConnection 一旦open, 事件datachannel 被发送到远端以完成打开数据通道的处理， 该事件触发 receiveChannelCallback() 方法
-  function receiveChannelCallback(event){
-    console.log("receiveChannelCallback,通道建立完成!!!!!!!!!!")
-    receiveChannel = event.channel;
-    receiveChannel.onmessage = handleReceiveMessage;
-    receiveChannel.onopen = handleReceiveChannelStatusChange;
-    receiveChannel.onclose = handleReceiveChannelStatusChange;
-  }
-
-  function handleAddCandidateError(err){
-    console.error("发送或接受端 添加候选人出错",err)
-  }
-
-  //远端直接忽略这些事件，只打印
-  function handleReceiveChannelStatusChange(event){
-    if (receiveChannel){
-        console.log("接收端: 管道状态改变为:"+receiveChannel.readyState)
-    }
-  }
-
-
+ 
   function handleSendChannelStatusChange(event){
        if (sendChannel){
           var status = sendChannel.readyState;
@@ -381,11 +280,9 @@ function startup() {
           }
       }
   }
-  var currentAcc
-  var connectToAcc
-  var isServer
+
   //主动告诉其他人:我是可以接收你们webrtc连接的
-  function prepareOK(currentAcc,name){
+  function login(currentAcc,name){
     //等待其他人来连接的webrtc
     //建立远程节点
     ws.sendJSON({
@@ -438,10 +335,10 @@ function createConnection(connectToAcc){
        })
     })
     //把远端的signal设置给本地
-    document.querySelector('form').addEventListener('submit', ev => {
-      ev.preventDefault()
-      p.signal(JSON.parse(document.querySelector('#incoming').value))
-    })
+    // document.querySelector('form').addEventListener('submit', ev => {
+    //   ev.preventDefault()
+    //   p.signal(JSON.parse(document.querySelector('#incoming').value))
+    // })
 
     p.on('connect', () => {
       console.log('CONNECT'+" to:"+connectToAcc+'主动连接建立成功')
@@ -472,7 +369,7 @@ function acceptConnection(connectFromAcc,signalData){
     })
     
     p.signal(signalData)
-    //测试看被动连接是否收到signal通知
+  
     p.on('signal', data => {
       console.log('SIGNAL 被动连接收到signal通知?????', JSON.stringify(data))
 
@@ -482,11 +379,6 @@ function acceptConnection(connectFromAcc,signalData){
         "to":connectFromAcc,
       })
     })
-    // document.querySelector('form').addEventListener('submit', ev => {
-    //   ev.preventDefault()
-    //   p.signal(JSON.parse(document.querySelector('#incoming').value))
-    // })
-
     p.on('connect', () => {
       console.log('CONNECT'+" from:"+connectFromAcc+'被动连接建立成功')
       p.send('whatever' + Math.random())
@@ -495,75 +387,7 @@ function acceptConnection(connectFromAcc,signalData){
       console.log('data: ' + data)
     })
   }
-
-  function connectPeers(btnEvt){
-      console.log("点击了连接按钮")
-
-      var ElementConnectTo = document.getElementById('connectTo')
-      //连接的远端
-      connectToAcc = ElementConnectTo.value;
-
-       
-
-      localConnection = new RTCPeerConnection()
-      localConnection.ondatachannel = (c)=>{console.log("本地datachannel建立完成!!!!",c)};
-      sendChannel = localConnection.createDataChannel("sendChannel");
-      sendChannel.onopen = handleSendChannelStatusChange;
-      sendChannel.onclose = handleSendChannelStatusChange;
-
-      // //建立远程节点
-      // remoteConnection = new RTCPeerConnection()
-      // //创建对 datachannel 的事件处理回调；数据通道打开时该逻辑将被执行， 该回调处理将接收到一个 RTCDataChannel 对象
-      // remoteConnection.ondatachannel = receiveChannelCallback;
-      // remoteConnection.onicecandidate = e=> 
-      // {
-      //     if (e.candidate){
-      //         console.log("远端设置ICE候选人并设置本地的候选人")
-      //         localConnection.addIceCandidate(e.candidate).catch(handleAddCandidateError)
-      //     }
-      // }
-      //设立ICE 候选人
-      localConnection.onicecandidate = e=> {
-            if(e.candidate){
-                console.log("本地设置ICE候选人并设置远端的候选人")
-               //remoteConnection.addIceCandidate(e.candidate).catch(handleAddCandidateError)
-                ws.sendJSON({
-                  "type":"candidate",
-                  "candidate":e.candidate,
-                  "name":connectToAcc,
-                })
-
-            }
-        }
-     
-      
-        
-        // localConnection.onicecandidate = e => !e.candidate
-        // || remoteConnection.addIceCandidate(e.candidate)
-        // .catch(handleAddCandidateError);
-
-        // remoteConnection.onicecandidate = e => !e.candidate
-        // || localConnection.addIceCandidate(e.candidate)
-        // .catch(handleAddCandidateError);
-
-     //启动连接尝试
-     localConnection.createOffer()
-     .then(offer => {
-       localConnection.setLocalDescription(offer)
-       console.log("发送offer给",connectToAcc)
-       ws.sendJSON({
-        "type":"offer",
-        "offer":offer,
-        "name":connectToAcc,
-       })
-     })
-     //.then(()=>remoteConnection.setRemoteDescription(localConnection.localDescription))
-    // .then(()=>remoteConnection.createAnswer())
-    // .then( answer=>remoteConnection.setLocalDescription(answer))
-    // .then(()=>localConnection.setRemoteDescription(remoteConnection.localDescription))
-     .catch(handleCreateDiscriptionError);
-  }
-
+ 
   //本地发送消息
   function sendMessage(){
     var message = messageInputBox.value;
