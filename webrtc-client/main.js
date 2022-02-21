@@ -51,9 +51,14 @@ ws.onmessage = function(evt) {
         }
       break;
       case "login":
-        console.log("")
-        dataNearbyUsers = data.users
-        UISetNearbyList(dataNearbyUsers)
+        if (data.success ){
+          console.log("login 成功:",data)
+           dataNearbyUsers = data.users
+           UISetNearbyList(dataNearbyUsers)
+        }else{
+          console.log("login 失败",data)
+        }
+       
         break;
       case "updateUsers"://有新的人出现
         var user = data.user 
@@ -112,20 +117,20 @@ function startup() {
 
   //数据
   var dataNearbyUsers = {
-    "wangaibin":{
-      "account":"wangaibin",
-      "name":"Alone",
-      "distance":560,
-      "longititude":32.01,
-      "latitude":152.1,
-    },
-    "wangjunhao":{
-      "account":"wangjunhao",
-      "name":"Awake",
-      "distance":340,
-      "longititude":32.02,
-      "latitude":152.3,
-    }
+    // "wangaibin":{
+    //   "account":"wangaibin",
+    //   "name":"Alone",
+    //   "distance":560,
+    //   "longititude":32.01,
+    //   "latitude":152.1,
+    // },
+    // "wangjunhao":{
+    //   "account":"wangjunhao",
+    //   "name":"Awake",
+    //   "distance":340,
+    //   "longititude":32.02,
+    //   "latitude":152.3,
+    // }
   }
 
   function UIFillReceiveBox(messages,selfAccount){
@@ -177,7 +182,8 @@ function startup() {
 
         var name = document.createElement("label")
         name.setAttribute("style","color: rgb(215, 233, 250);")
-        name.innerHTML= user.name + "("+ user.distance + "m)"
+        //name.innerHTML= user.name + "("+ user.distance + "m)"
+        name.innerHTML= user.name
         //列表元素
         var li = document.createElement('li')
         //li.setAttribute("class","messagebox")
@@ -429,3 +435,5 @@ function acceptConnection(connectFromAcc,signalData){
     messageInputBox.value = "";
     messageInputBox.disabled = true;
   }
+
+  

@@ -62,15 +62,15 @@ wss.on("connection", ws => {
       //when a user tries to login
       case "login":
         var name = data.name
-        var account = data.account
+        //var account = data.account
         //Check if username is available
-        if (users[account]) {
-          sendTo(ws, {
-            type: "login",
-            success: false,
-            message: "account is already online"
-          });
-        } else {
+        // if (users[account]) {
+        //   sendTo(ws, {
+        //     type: "login",
+        //     success: false,
+        //     message: "account is already online"
+        //   });
+        // } else {
           const account = data.account || uuidv4();
           const loggedIn = Object.values(
             users
@@ -90,7 +90,7 @@ wss.on("connection", ws => {
           });
           //把当前登录用户给所有人返回一遍
           sendToAll(users, "updateUsers", ws);
-        }
+        //}
         break;
       case "signal":
         const toAccount = data.to
