@@ -86,6 +86,7 @@ wss.on("connection", ws => {
           sendTo(ws, {
             type: "login",
             success: true,
+            account:account,
             users: loggedIn
           });
           //把当前登录用户给所有人返回一遍

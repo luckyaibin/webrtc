@@ -53,8 +53,9 @@ ws.onmessage = function(evt) {
       case "login":
         if (data.success ){
           console.log("login 成功:",data)
-           dataNearbyUsers = data.users
-           UISetNearbyList(dataNearbyUsers)
+          dataNearbyUsers = data.users
+          gSelfAccount = data.account
+          UISetNearbyList(dataNearbyUsers)
         }else{
           console.log("login 失败",data)
         }
@@ -118,6 +119,7 @@ function startup() {
     // }
   }
 
+  var gSelfAccount
   //数据
   var dataNearbyUsers = {
     // "wangaibin":{
@@ -204,7 +206,7 @@ function startup() {
         btnChat.innerHTML = 'chat with';
         btnChat.onclick = function(handler,ev){
           console.log("想要和"+user.account+"建立连接")
-          createConnection(user.account)
+          createConnection(btnChat,user.account)
         }
         li.appendChild(name)
         li.appendChild(btnChat)
@@ -220,7 +222,7 @@ function startup() {
   function UISetRecentChatList(users){
     //最近列表
     recentchatlist = document.getElementById('recentchatlist')
-    if (!recentchatlist){
+    if (!users){
       recentchatlist.innerHTML = ""
     }else {
       console.log("最近列表",recentchatlist)
@@ -322,7 +324,7 @@ function getConnection(connectToAcc){
 }
 
 //主动发起连接
-function createConnection(connectToAcc){
+function createConnection(btnChat,connectToAcc){
   console.log("开始建立主动连接:",connectToAcc)
     const p = new SimplePeer({
       initiator: true,
@@ -361,13 +363,46 @@ function createConnection(connectToAcc){
     p.on('connect', () => {
       console.log('CONNECT'+" to:"+connectToAcc+'主动连接建立成功')
       p.send('whatever' + Math.random())
+      btnChat.innerHTML = "disconnect"
 
-      // var recent = localStorage.getItem("recentChat")
-      // dataRecentChatUsers = JSON.parse(recent)
-
+      var recent = localStorage.getItem("recentChat")
+      dataRecentChatUsers = JSON.parse(recent)
+      if  (!dataRecentChatUsers){
+        dataRecentChatUsers = {}
+      }
+      if (!dataRecentChatUsers[connectToAcc]){
+        dataRecentChatUsers[connectToAcc] = {
+          "account":connectToAcc,
+          //"name":"Alone",
+          "messages":[]
+          }
+      }
     })
     p.on('data', data => {
       console.log('data: ' + data)
+      if  (!dataRecentChatUsers){
+        dataRecentChatUsers = {}
+      }
+      if (!dataRecentChatUsers[connectToAcc]){
+        dataRecentChatUsers[connectToAcc] = {
+          "account":connectToAcc,
+          //"name":"Alone",
+          "messages":[]
+          }
+      }
+      var newMsg = {
+        "account":"wangjunhao",
+        "time":unixMs,
+        "content":data
+      }
+      //添加一条记录
+      var now = new Date();
+      var unixMs = now.getTime()
+      dataRecentChatUsers[connectToAcc].messages.push(newMsg)
+      var recent = JSON.stringify(dataRecentChatUsers)
+      localStorage.setItem("recentChat",recent)
+
+      UIAddOneMessage(newMsg,gSelfAccount)
     })
   }
   //可以主动响应别人发起的连接
