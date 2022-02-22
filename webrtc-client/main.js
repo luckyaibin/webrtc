@@ -87,32 +87,35 @@ function startup() {
       login(acc,name)
     })
 
-    UISetNearbyList(dataNearbyUsers)
+    //UISetNearbyList(dataNearbyUsers)
+    var recent = localStorage.getItem("recentChat")
+    dataRecentChatUsers = JSON.parse(recent)
+    console.log("获取当前最近数据",dataNearbyUsers)
     UISetRecentChatList(dataRecentChatUsers)
   }
 
   //最近联系人
   var dataRecentChatUsers = {
-    "wangaibin":{
-      "account":"wangaibin",
-      "name":"Alone",
-      "messages":[
-          {
-            "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:00:00","content":"你好"
-          },
-          {
-            "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:01:00","content":"1?"
-          },
-          {
-            "account":"wangaibin","name":"Alone","time":"2022-02-17 18:01:00","content":"是的,我在"
-          }
-        ]//最近100条信息
-    },
-    "wangjunhao":{
-      "account":"wangjunhao",
-      "name":"Awake",
-      "messages":{}
-    }
+    // "wangaibin":{
+    //   "account":"wangaibin",
+    //   "name":"Alone",
+    //   "messages":[
+    //       {
+    //         "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:00:00","content":"你好"
+    //       },
+    //       {
+    //         "account":"wangjunhao","name":"Awake","time":"2022-02-17 18:01:00","content":"1?"
+    //       },
+    //       {
+    //         "account":"wangaibin","name":"Alone","time":"2022-02-17 18:01:00","content":"是的,我在"
+    //       }
+    //     ]//最近100条信息
+    // },
+    // "wangjunhao":{
+    //   "account":"wangjunhao",
+    //   "name":"Awake",
+    //   "messages":{}
+    // }
   }
 
   //数据
@@ -193,11 +196,12 @@ function startup() {
         btnChat.data = "hi"
         if (user.signal!="" && user.signal!=null ){ 
           btnChat.innerHTML = 'chat with';
-          btnChat.disabled = false
+          //btnChat.disabled = false
         }else{
           btnChat.innerHTML = 'no disturb';
-          btnChat.disabled = true
+          //btnChat.disabled = true
         }
+        btnChat.innerHTML = 'chat with';
         btnChat.onclick = function(handler,ev){
           console.log("想要和"+user.account+"建立连接")
           createConnection(user.account)
@@ -216,8 +220,16 @@ function startup() {
   function UISetRecentChatList(users){
     //最近列表
     recentchatlist = document.getElementById('recentchatlist')
-    if(recentchatlist){
+    if (!recentchatlist){
+      recentchatlist.innerHTML = ""
+    }else {
       console.log("最近列表",recentchatlist)
+      recentchatlist.onscroll=function(){
+        console.log("滚动中......")
+        console.log(recentchatlist.scrollTop() )
+        console.log(recentchatlist.height())
+      };
+
       Object.keys(users).forEach(account => {
         //列表元素
         var li = document.createElement('li')
@@ -349,6 +361,10 @@ function createConnection(connectToAcc){
     p.on('connect', () => {
       console.log('CONNECT'+" to:"+connectToAcc+'主动连接建立成功')
       p.send('whatever' + Math.random())
+
+      // var recent = localStorage.getItem("recentChat")
+      // dataRecentChatUsers = JSON.parse(recent)
+
     })
     p.on('data', data => {
       console.log('data: ' + data)

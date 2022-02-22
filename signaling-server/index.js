@@ -166,7 +166,7 @@ wss.on("connection", ws => {
     }
   });
   ws.on("close", function() {
-    delete users[ws.name];
+    delete users[ws.account];
     sendToAll(users, "leave", ws);
   });
   //send immediately a feedback to the incoming connection
