@@ -44,9 +44,9 @@ ws.onmessage = function(evt) {
         var fromAccount = data.from;
         var signalData = data.signalData
         var conn= getConnection(fromAccount)
-        if (!conn){
+        if (!conn){//如果conn不存在就是对方主动通知signal来建立连接的
           acceptConnection(fromAccount,signalData)
-        }else{
+        }else{//conn存在，就是对方更新signal
           conn.peer.signal(signalData)
         }
       break;
@@ -206,7 +206,15 @@ function startup() {
         btnChat.innerHTML = 'chat with';
         btnChat.onclick = function(handler,ev){
           console.log("想要和"+user.account+"建立连接")
-          createConnection(btnChat,user.account)
+
+          var conn = getConnection(user.account)
+          if (conn && conn.peer){//已经连接了，就断开连接
+            closeConnection(user.account)
+            btnChat.innerHTML="chat with2"
+          }else{//没有连接，则建立连接
+            createConnection(btnChat,user.account)
+          }
+          
         }
         li.appendChild(name)
         li.appendChild(btnChat)
@@ -421,7 +429,7 @@ function acceptConnection(connectFromAcc,signalData){
 
     p.on('error', err => {
       //出错了就删除
-      console.log('error', err)
+      console.log(connectFromAcc,'连接断开??error', err)
       delete currentConnections[connectFromAcc]
     })
     
@@ -444,7 +452,17 @@ function acceptConnection(connectFromAcc,signalData){
       console.log('data: ' + data)
     })
   }
- 
+
+//关闭和某人的连接
+function closeConnection(account){
+  if (currentConnections && currentConnections[account]){
+    if (currentConnections[account].peer ){
+      currentConnections[account].peer.destroy()
+    }
+    delete currentConnections[account]
+  }
+}
+
   //本地发送消息
   function sendMessage(){
     var message = messageInputBox.value;
