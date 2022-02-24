@@ -228,6 +228,7 @@ function startup() {
 
 
   function UISetRecentChatList(users){
+    console.log("刷新最近聊天列表",users)
     //最近列表
     recentchatlist = document.getElementById('recentchatlist')
     if (!users){
@@ -248,7 +249,7 @@ function startup() {
         var user = users[account]
         var name = document.createElement("label")
         name.setAttribute("style","color: rgb(215, 233, 250);")
-        name.innerHTML= user.name
+        name.innerHTML= user.account + user.name
     
         var btnChat = document.createElement('button')
         btnChat.setAttribute("class","buttonleft")
@@ -446,6 +447,24 @@ function acceptConnection(connectFromAcc,signalData){
     })
     p.on('connect', () => {
       console.log('CONNECT'+" from:"+connectFromAcc+'被动连接建立成功')
+      //更新聊天列表
+      //UISetNearbyList(dataNearbyUsers)
+
+      
+      var recent = localStorage.getItem("recentChat")
+      dataRecentChatUsers = JSON.parse(recent)
+      console.log("获取当前最近数据",dataNearbyUsers)
+
+      if (!dataRecentChatUsers[connectFromAcc]){
+        dataRecentChatUsers[connectFromAcc] = {
+          "account":connectFromAcc,
+          "name":"???",
+          "messages":[]
+        }
+      }
+      //刷新列表
+      UISetRecentChatList(dataRecentChatUsers)
+
       p.send('whatever' + Math.random())
     })
     p.on('data', data => {
